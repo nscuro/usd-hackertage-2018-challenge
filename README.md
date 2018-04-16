@@ -1,6 +1,6 @@
 # usd Hackertage 2018 - Challenge
 
-In der diesjährigen (2018) Challenge galt es, Tokens in dem Format `usd{[a-z0-9]{32}}` in einem Unity Game zu finden.
+In der diesjährigen (2018) Challenge galt es, Tokens in dem Format `usd{[a-z0-9]{32}}` in einem Unity Game zu finden. Mindestens eines musste gefunden werden, um sich für eine Anmeldung an den [Hackertagen](https://www.usd.de/usd-hackertage/) 2018 qualifizieren zu können - maximal 6 gab es zu holen.
 
 Dies war meine erste Teilnahme an einer Challenge von [usd](https://www.usd.de/). Der folgende Aufschrieb dient hauptsächlich der persönlichen Archivierung.  
 
