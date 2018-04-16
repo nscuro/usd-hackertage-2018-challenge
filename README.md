@@ -4,7 +4,7 @@ In der diesjährigen (2018) Challenge galt es, Tokens in dem Format `usd{[a-z0-9
 
 Dies war meine erste Teilnahme an einer Challenge von [usd](https://www.usd.de/). Der folgende Aufschrieb dient hauptsächlich der persönlichen Archivierung.  
 
-Zum Nachvollziehen der Lösung kann hier die Challenge heruntergeladen werden: [Awareness.zip](./Awareness.zip)
+Zum nachträglichen Nachvollziehen der Lösung kann hier die Challenge heruntergeladen werden: [Awareness.zip](./Awareness.zip)
 
 ## Token \#1 - app.info
 Das erste Token "versteckt" sich in der `app.info` Datei:
@@ -45,8 +45,49 @@ Wir durchstöbern den Quellcode und stoßen in `Assembly-CSharp.dll` auf die Kla
 
 Gibt man das Token dann als Lizenz ein, wird der Menüpunkt "*New Game*" freigeschaltet.
 
-## Token \#4 - HTTP API Secret
+## Token \#4 - Highscore
+In der Klasse `HttpApi` setzen wir einen Breakpoint in der `Start()` Methode und wählen im Menü "*New Game*". Der Breakpoint wird getriggert und wir können die Klassenfelder `endpoint` und `key` auslesen.
 
-## Token \#5 - Highscore
+![HTTP API Endpoint und Key](.images/token_04_httpapi-endpoint-and-key.png)
+
+Wir entnehmen den restlichen Methoden der Klasse, dass es die API Endpoints `/players` und `/highscore` zu geben scheint. Ein Aufruf von `/players` gibt einen einfachen Integer zurück - angeblich die Anzahl der Spieler.  
+
+Wesentlich interessanter sind da die Methoden `PostHighScore` und `SecureMessage`:
+
+![Methoden der HttpApi Klasse](.images/token_04_httpapi-methods.png)
+
+Kurz: Um einen Highscore einstellen zu können, müssen wir den entsprechenden Score zusammen mit einem HMAC bestehend aus dem Score als Nachricht und dem zuvor identifizierten API key als Secret and den `/highscore` Endpoint posten. Wie deutlich im Code zu sehen muss SHA256 zum hashen verwendet werden.
+
+![Token 5 - Response auf das Posten eines Highscores](.images/token_04_highscore.png)
+
+Für die schnelle Erzeugung des HMAC habe ich [diese](https://www.freeformatter.com/hmac-generator.html) Seite verwendet. 
+
+## Token \#5 - HTTP API Secret
+Wir schauen uns die Klasse `ApiSecret` aus dem `Api.dll` Assembly an.
+
+![ApiSecret Code](.images/token_05_code.png)
+
+Ok - `GetString` sieht schonmal gruselig aus. Aber wir sehen, dass scheinbar je nachdem von welcher Methode aus `GetSecret` aufgerufen wird, wir ein anderes Secret bekommen.  
+
+Seltsamerweise wird `GetSecret` aber nie getriggert, kein Breakpoint greift. Wir behelfen uns, indem wir die Methode manuell von einer Stelle aus aufrufen, von der wir wissen, dass sie garantiert beim Starten des Spiels aufgerufen wird: `HttpApi.Start()`:
+
+![Die Modifizierte Methode](.images/token_05_modified-method.png)
+
+Nun setzen wir einen Breakpoint in `ApiSecret`, Zeile `29`. Wir wählen wieder "*New Game*" und unser Breakpoint wird getriggert. Wir überspringen diese Zeile und editieren dann die Variable `flag`, sodass diese nun `false` statt `true` beinhaltet. Jetzt steppen wir im Debugger bis zum Ende der Methode und erhalten unser Token.
+
+![Token 5 - Das alternative API secret](.images/token_05_alternative-secret.png)
 
 ## Token \#6 - Screenshot
+Beim Betrachten der Klasse `ScreenshotUtil` fällt uns auf, dass Irgendwas komisches mit dem Bild gemacht wird, bevor es gespeichert wird:
+
+![Code der ScreenshotUtil Klasse](.images/token_06_code.png)
+
+Ein Overlay wird über das Bild gelegt - bei den betroffenen Pixeln wird der Red-Channel um `0.01` inkrementiert - für das bloße Auge eine nicht zu erkennende Änderung.
+
+Ich habe viel zu viel Zeit damit verbracht, irgendwie nachzuvollziehen, was genau da passiert und wie wohl das Resultat aussehen könnte, bis ic darauf kam, das Inkrement einfach auf eine höhere Zahl zu erhöhen, z.B. `1.0`.  
+
+Das war dann auch schon die Lösung. Code editiert, kompiliert, Assembly gespeichert, Spiel gestartet, mit `F12` einen Screenshot erstellt, die neue Datei `capture.png` im Hauptverzeichnis des Spiels geöffnet...  
+
+Am linken unteren Bildschirmrand war ein vertikal gespiegeltes Token. Also Bild um 180° gedreht und horizontal gespiegelt:
+
+![Token 6 - Der Screenshot](.images/token_06_screenshot.png)
